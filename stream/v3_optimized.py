@@ -120,8 +120,8 @@ class RealtimeDetector:
         self.conf        = conf
         self.infer_every = infer_every
         self.infer_size  = infer_size
-	from preprocessing.preprocessor import Preprocessor, PreprocessConfig
-	self.preprocessor = Preprocessor(PreprocessConfig(infer_size=infer_size))
+        from preprocessing.preprocessor import Preprocessor, PreprocessConfig
+        self.preprocessor = Preprocessor(PreprocessConfig(infer_size=infer_size))
 
         self._frame_idx   = 0
         self._last_boxes  = []      # [(label, conf, x1,y1,x2,y2), ...]
@@ -147,38 +147,38 @@ class RealtimeDetector:
 
         # ── Inferência (apenas a cada N frames) ──────────────
         if self._frame_idx % self.infer_every == 0:
-	    preproc_result = self.preprocessor.process(frame)
-
-    	    t0 = time.perf_counter()
-    	    results = self.model(
+            preproc_result = self.preprocessor.process(frame)
+            
+            t0 = time.perf_counter()
+            results = self.model(
                 preproc_result.frame,
                 conf=self.conf,
                 verbose=False
-    	    )
+            )
             self._last_infer_ms = (time.perf_counter() - t0) * 1000
 
-    	    self._last_boxes = []
+            self._last_boxes = []
 
-    	    for r in results:
-        	for box in r.boxes:
-            	    bbox_lb = box.xyxy[0].numpy().reshape(1, 4)
+            for r in results:
+                for box in r.boxes:
+                    bbox_lb = box.xyxy[0].numpy().reshape(1, 4)
 
-            	    x1, y1, x2, y2 = self.preprocessor.adjust_boxes(
-                	bbox_lb,
-                	preproc_result
-            	    )[0]
+                    x1, y1, x2, y2 = self.preprocessor.adjust_boxes(
+                        bbox_lb,
+                        preproc_result
+                    )[0]
 
-            	    label = self.model.names[int(box.cls[0])]
-            	    conf = float(box.conf[0])
+                    label = self.model.names[int(box.cls[0])]
+                    conf = float(box.conf[0])
 
-            	    self._last_boxes.append((
-                	label,
-                	conf,
-                	int(x1),
-                	int(y1),
-                	int(x2),
-                	int(y2)
-            	    ))
+                    self._last_boxes.append((
+                        label,
+                        conf,
+                        int(x1),
+                        int(y1),
+                        int(x2),
+                        int(y2)
+                    ))
         # ── Desenha bounding boxes ────────────────────────────
         output = frame.copy()
         for (label, conf, x1, y1, x2, y2) in self._last_boxes:
